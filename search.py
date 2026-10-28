@@ -23,8 +23,6 @@ def tokenize(text):
 
 def build_index(netflix_movies):
     corpus = [tokenize(word) for word in netflix_movies["search_row"]]
-    print(corpus.head(10))
-
     return BM25Okapi(corpus)
 
 
