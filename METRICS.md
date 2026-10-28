@@ -146,8 +146,9 @@ the Phase 2 corpus/split/pool fingerprint checks before constructing mappings.
 
 These pure functions do not load or choose research data, merge label passes,
 enforce file fingerprints, select a query partition, or run tuning. They must
-not be used to bypass those protocol checks. The Phase 4 evaluation/review
-workflow still needs to connect rankings with the saved human judgments.
+not be used to bypass those protocol checks. The Phase 4 [evaluation/review
+workflow](ANALYSIS.md) connects rankings with saved human judgments, validates
+input fingerprints, and reports MRR at the supplied retrieval depth.
 
 All tuning remains development-only. Do not mix development and held-out queries
 in a reported average. Final results remain placeholders:

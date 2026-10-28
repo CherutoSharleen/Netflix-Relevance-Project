@@ -1,129 +1,215 @@
-# 🎬 Guess the Genre
+# Netflix retrieval failure analysis
 
-**Type a movie plot, and a Naive Bayes model guesses its genre.**
+BM25 retrieval over the Netflix catalogue, with human relevance judgments and
+human-assigned failure causes. A combined Streamlit app includes this research
+track and the existing **Guess the Genre** classifier.
 
-An interactive Streamlit app that predicts a movie's genre from its description, trained on the Netflix Movies and TV Shows dataset. It shows the prediction, how confident the model is, and which words influenced the answer.
+**Status:** implementation is available; research queries, relevance labels, and
+failure assignments have not been supplied. All effectiveness results below
+remain explicit placeholders. No empirical conclusion has been established.
 
-👉 **[Try the live app](https://YOUR-APP-LINK.streamlit.app)**
+## Question
 
-<!-- Add a screenshot: take one of the running app, save it as screenshot.png in this repo, and it will show here -->
-![App screenshot](screenshot.png)
+Do most retrieval failures originate upstream of the ranking function, in data
+quality, tokenisation, field coverage, or query-document vocabulary mismatch,
+rather than BM25 scoring itself?
 
----
+This is a thesis to test, not an assumption used to label failures. Only the
+researcher assigns relevance and failure categories.
 
-## What it does
+## Method
 
-- **Predicts a genre** from any plot description you type
-- **Shows probabilities** for every genre, so you can see when the model is unsure
-- **Explains its answer** by listing the words that pushed it toward that genre
-- **Lets you adjust the prior** (alpha) with a slider and see how accuracy changes
-- **Shows what each genre "sounds like"**, meaning the words most typical of that genre
+1. Audit and conservatively clean the source data while preserving stable IDs.
+2. Freeze human-authored queries into development and held-out partitions
+   **before tuning**. Use only development queries to choose settings.
+3. Predeclare retrieval configurations and pool their candidates. Add
+   human-selected records to improve judgment coverage.
+4. Enter grades 0-3 yourself, then blindly re-label a saved sample later.
+5. Calculate metrics from their definitions; compare development ablations.
+6. Review every query below a chosen nDCG threshold and assign a primary cause.
+7. Freeze one configuration and metric protocol before final held-out evaluation.
 
-## How it works
+The failure distribution and metric deltas are evidence for discussion, not
+automatic proof that a particular mechanism caused a failure.
 
-1. **Data:** Netflix movie descriptions and their genres. I kept movies only, used each movie's first real genre (skipping labels like "International Movies"), and focused on the 6 most common genres.
-2. **Text to numbers:** Each description is turned into word counts with `CountVectorizer`, removing common words like "the" and "and".
-3. **Model:** A Multinomial Naive Bayes classifier learns how often each word appears in each genre. For a new plot, it uses **Bayes' theorem** to work out which genre is most likely given those words.
-4. **The prior:** The `alpha` setting is a Bayesian prior. It assumes every word *could* appear in any genre, so one rare word can't completely decide the prediction.
+## Dataset and cleaning
 
-## Results
+The checked-in [Netflix Movies and TV Shows dataset](https://www.kaggle.com/datasets/shivamb/netflix-shows)
+contains **8,807 records: 6,131 movies and 2,676 TV shows**. Retrieval uses both
+types, unlike the movies-only genre classifier.
 
-| Model | Test accuracy |
+Cleaning normalizes Unicode/whitespace, preserves missing text as empty, checks
+duplicates/identifiers, and narrowly repairs three misplaced duration values.
+No rows are removed from the current source, and the original CSV is unchanged.
+See [DATA.md](DATA.md) for every decision and measured missing-field counts.
+
+BM25 defaults search title, description, genres, cast, director, and country.
+Fields, integer token-repetition weights, tokenisation, case handling, English
+Porter stemming, and BM25 parameters are configurable. Repetition weights change
+document lengths too; they are not BM25F.
+
+## Labelling protocol and self-consistency
+
+The CLI shows a query and complete cleaned record, without scores, ranks, prior
+grades, or a suggested label. It accepts only your explicit integer grade 0-3
+and records a UTC timestamp immediately. There is no default grade.
+
+Write down your interpretation of the scale and query intent before labelling.
+Binary metrics require you to explicitly choose which grades count as relevant.
+The judgment list size is **[RESULT: number of judged query-record pairs]** over
+**[RESULT: number of research queries]** queries.
+
+Blind re-labelling samples already graded pairs without replacement, saves that
+exact queue, and hides earlier grades. Choose a delay and record it yourself.
+There is no enforced waiting period; the tool cannot prevent memory or reading
+your own original CSV. See [LABELING.md](LABELING.md).
+
+| Self-consistency item | Result |
 |---|---|
-| Always guess the most common genre (baseline) | XX% |
-| Naive Bayes (alpha = 1.0) | XX% |
+| Re-labelled pairs | [RESULT: number of re-labelled pairs] |
+| Delay between passes | [RESULT: re-labelling delay] |
+| Exact agreement | [RESULT: exact self-agreement] |
+| Quadratic-weighted Cohen's kappa | [RESULT: quadratic-weighted Cohen's kappa] |
 
-<!-- Fill these in with the numbers shown in the app's sidebar -->
+Undefined kappa is reported explicitly, not replaced with a perfect score.
 
-**What I noticed:**
-- <!-- e.g. Documentaries and horror were easiest to predict because they use very distinctive words -->
-- <!-- e.g. Dramas and comedies were often confused with each other -->
-- <!-- e.g. Very small alpha values made accuracy worse / better because... -->
+## Metrics
+
+`metrics.py` implements precision@k, recall@k, reciprocal rank/MRR, and nDCG@k
+using the standard library. Tests include hand-worked examples and a separate
+`ir-measures` cross-check. See [METRICS.md](METRICS.md).
+
+Precision divides by k even for short runs. Recall is relative to the supplied
+human judgment list. nDCG uses **linear grade gain** with base-2 log discounts.
+The analysis runner reports **MRR@k**, since it evaluates runs truncated at k.
+All query averages weight queries equally.
+
+Missing labels are errors, never implicit zero grades. Undefined recall/nDCG
+cases stop evaluation rather than silently dropping queries.
+
+| Measure | Development | Held-out, frozen configuration |
+|---|---|---|
+| Precision@10 | [RESULT: precision@10 dev] | [RESULT: precision@10 heldout] |
+| Recall@10, judged list | [RESULT: recall@10 dev] | [RESULT: recall@10 heldout] |
+| MRR@10 | [RESULT: MRR@10 dev] | [RESULT: MRR@10 heldout] |
+| nDCG@10, linear gain | [RESULT: nDCG@10 dev] | [RESULT: nDCG@10 heldout] |
+
+The table's cutoff is a reporting placeholder, not a chosen study protocol.
+Document the actual cutoff, binary threshold, and failure threshold before use.
+
+## Failure breakdown and ablations
+
+For each query below your nDCG threshold, the workflow exports top results,
+missed judged-relevant records, original field text, missing fields, matching
+fields excluded from the index, and literal overlap under the configured,
+word-token, and stemmed representations.
+
+You fill every primary cause in `assignments.csv`. Proposed categories do not
+pre-assign any failure. A complete assignment file produces per-experiment
+counts, metric-delta tables, and one baseline failure-count chart.
+
+| Baseline primary cause | Count |
+|---|---|
+| Tokenisation | [RESULT: baseline tokenisation failures] |
+| Missing or poor field data | [RESULT: baseline data-quality failures] |
+| Field coverage | [RESULT: baseline field-coverage failures] |
+| Vocabulary mismatch | [RESULT: baseline vocabulary failures] |
+| Field weighting | [RESULT: baseline field-weighting failures] |
+| Ambiguous judgment | [RESULT: baseline ambiguous judgments] |
+| True ranking failure | [RESULT: baseline ranking failures] |
+| Other, explained in notes | [RESULT: baseline other failures] |
+
+Development ablation deltas: **[RESULT: ablation metric-delta table]**.
+Baseline failure-count chart: **[RESULT: human-assigned failure-count chart]**.
+Thesis assessment: **[RESULT: interpretation after human failure review]**.
+
+See [ANALYSIS.md](ANALYSIS.md) for the full pooling, evaluation, review, summary,
+and held-out freeze procedure. The shipped `experiments.json` contains untuned
+mechanical examples, not recommended winning configurations.
 
 ## Limitations
 
-- Descriptions are short (one or two sentences), so there isn't much text to learn from.
-- Many movies belong to several genres, but the model only predicts one.
-- Naive Bayes treats each word independently, so it misses context (e.g. "not scary").
+- **Single annotator:** relevance and cause assignments reflect one person's
+  interpretation. Self-consistency is not inter-annotator agreement.
+- **Judgment-list size and coverage:** [RESULT: judgment-list size and coverage].
+  Pooling can omit relevant records; judged-list recall is not exhaustive corpus
+  recall. Unknown relevance is never silently treated as irrelevant.
+- **Development-set overfitting:** repeated ablations can adapt to development
+  queries and judgments. Freeze settings before final held-out evaluation.
+- Queries can leak through paraphrases even when duplicate text is rejected.
+  The software guards workflow inputs, not deliberate manual inspection.
+- Short, multilingual metadata can limit retrieval. English stemming can damage
+  names or non-English text. The catalogue is a historical snapshot.
+- Failure causes can overlap; a single primary category simplifies them.
+  Literal token evidence and ablation improvements alone do not prove causation.
+- A re-label sample can be small or affected by memory, timing, and selection.
+- MRR is depth-limited in the analysis runner. Undefined metrics require a
+  transparent protocol decision rather than hidden query exclusion.
+- Community Cloud sessions/files are not durable storage for research artifacts.
 
-## Run it locally
+## Reproduce locally
 
-```bash
-git clone https://github.com/YOUR-USERNAME/YOUR-REPO.git
-cd YOUR-REPO
-pip install -r requirements.txt
-streamlit run app.py
-```
-
-## Tech used
-
-Python · pandas · scikit-learn · Streamlit
-
-## Data
-
-[Netflix Movies and TV Shows](https://www.kaggle.com/datasets/shivamb/netflix-shows) dataset from Kaggle.
-
-## Retrieval failure analysis (Phase 1)
-
-The repository also contains a BM25 retrieval research track, separate from the
-genre classifier. Its question is whether most retrieval failures originate in
-data quality, tokenisation, field coverage, or vocabulary mismatch rather than
-BM25 scoring itself. This is a hypothesis to test, not an established result.
-
-Phase 1 adds an audited loader for all 8,807 movie and TV records and a
-configurable in-memory BM25 index. The classifier and exploratory notebook are
-unchanged. The legacy `search.py` remains available, with its failing list
-debug-print removed.
+Use Python 3.12 or newer in a virtual environment. From this checkout:
 
 ```powershell
 python -m pip install -r requirements.txt
 python retrieval.py --audit-only
-python retrieval.py --query "space adventure"
-python retrieval.py --fields title description listed_in --weight title=3 --tokenizer words --stem --query "space adventure"
+python -m streamlit run streamlit_app.py
+```
+
+The combined app offers **Film search**, **Retrieval research**, and **Guess the
+genre**. Search needs no labels; research evaluation stops until you upload your
+own valid frozen split, pool, and judgments. Hosted outputs must be downloaded
+and backed up. Human labelling remains local through `label_cli.py`.
+
+Create `judgment_data\queries.csv` yourself with header `query_id,query`, then:
+
+```powershell
+python label_cli.py split --queries judgment_data\queries.csv --output judgment_data\split.json --heldout-fraction 0.2 --seed 42
+python analysis_cli.py prepare --split-file judgment_data\split.json --experiments experiments.json -k 10 --output judgment_data\dev_pool.json
+python label_cli.py label --split-file judgment_data\split.json --pool judgment_data\dev_pool.json --labels judgment_data\judgments.csv
+```
+
+Choose thresholds explicitly before the evaluation commands documented in
+ANALYSIS.md. Complete blind re-labelling as documented in LABELING.md. Do not
+commit live judgments accidentally: `judgment_data/` is gitignored, not backed up.
+Explicitly version finalized, non-sensitive research artifacts when appropriate.
+
+```powershell
 python -m pip install -r requirements-test.txt
 python -m pytest -q
 ```
 
-See [DATA.md](DATA.md) for all cleaning decisions, actual missing-field counts,
-tokenisation/stemming choices, and field-weight semantics. Weights repeat tokens
-and therefore affect both term frequency and document length; this is not BM25F.
-Run `python retrieval.py --help` for all options.
+All fixture grades are artificial test data, never research judgments.
 
-### Human judgment tooling (Phase 2)
+## Deploy the combined app free
 
-`python label_cli.py --help` exposes a human-only CLI for freezing development
-and held-out query sets, preparing ungraded candidates, recording timestamped
-grades 0-3, and re-labelling a saved blind sample. Completed paired passes can
-report exact agreement and quadratic-weighted Cohen's kappa.
+Push this branch to GitHub. In [Streamlit Community Cloud](https://share.streamlit.io/),
+sign in with your account, create an app from
+`CherutoSharleen/Netflix-Relevance-Project`, select the branch containing these
+files, and set the main file to **`streamlit_app.py`**. Choose Python 3.12 in
+advanced settings. `requirements.txt` contains runtime dependencies; the
+independent IR cross-check dependency is only in `requirements-test.txt`.
 
-Start by writing your own `query_id,query` CSV; no research queries or relevance
-labels are generated. See [LABELING.md](LABELING.md) for the full protocol,
-commands, input fingerprints, resume behavior, and pool-coverage limitations.
-Tuning must use only the development queries.
+The repository root is the app working directory. No secrets or external data
+services are required. The source CSV ships with the repository. Never put
+credentials in source control; `.streamlit/secrets.toml` is ignored.
 
-There are no retrieval results or human relevance labels yet, and no tuning has
-been performed. Self-consistency: [RESULT: exact self-agreement];
-[RESULT: quadratic-weighted Cohen's kappa].
+Deployment URL: **[RESULT: verified Streamlit deployment URL]**.
+GitHub push alone is not a Streamlit deployment: creation requires your
+authenticated Community Cloud session. Point an existing genre-only deployment
+at the new entry point only if you intend to replace its hosted interface.
 
-### Metric definitions (Phase 3)
+## Existing genre classifier
 
-`metrics.py` implements precision@k, recall@k, MRR, and nDCG@k from their
-definitions, without an IR metrics library. Hand-calculated examples are in
-`tests/test_metrics.py`; an independent `ir-measures` cross-check lives in
-`tests/test_metrics_library.py` and uses `requirements-test.txt`.
+The original `app.py` is preserved and remains independently runnable:
 
-Missing labels are errors, never implicit zero grades. Binary metrics require
-an explicit relevance threshold. nDCG uses linear graded gain and base-2 log
-discounts. See [METRICS.md](METRICS.md) for all conventions, undefined cases,
-and judgment-pool limitations.
+```powershell
+python -m streamlit run app.py
+```
 
-No research effectiveness results have been computed:
-[RESULT: precision@10 dev], [RESULT: recall@10 dev], [RESULT: MRR dev],
-[RESULT: nDCG@10 dev]. Failure analysis and the final research write-up remain
-for later phases.
-
-## Future ideas
-
-- A game mode where you compete against the model to guess the genre of real Netflix movies
-- Predict multiple genres per movie
-- Compare Naive Bayes with other models like logistic regression
+It uses movie descriptions, word counts, and Multinomial Naive Bayes to predict
+a main genre, with probabilities, influential words, and an adjustable alpha.
+Its movies-only preparation and classification task are distinct from BM25
+retrieval; its classifier accuracy is not a retrieval result. The combined
+navigation runs the same original entry point without rewriting that model.

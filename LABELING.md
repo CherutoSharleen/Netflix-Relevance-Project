@@ -173,7 +173,8 @@ logs. Keep your own backups and explicitly version the finalized research
 artifacts when ready; ignoring is not backup or access control.
 
 Phase 3 [retrieval metric definitions](METRICS.md) are implemented independently
-of these files. Real evaluation still requires your queries and complete human
-judgments. Phase 4 failure assignments and Phase 5 final write-up are not
-implemented. Missing research queries and labels must be supplied by you; the
-tool never fills those gaps.
+of these files. Phase 4 [analysis tooling](ANALYSIS.md) adds union candidate pools
+for predeclared ablations, validated evaluation, and human-filled failure review.
+Use that union pool rather than baseline-only candidates when planning ablations.
+The [write-up](README.md) contains placeholders until you supply research queries,
+human judgments, and failure assignments. The tool never fills those gaps.
