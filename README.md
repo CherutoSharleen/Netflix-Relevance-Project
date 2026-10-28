@@ -63,6 +63,35 @@ Python · pandas · scikit-learn · Streamlit
 
 [Netflix Movies and TV Shows](https://www.kaggle.com/datasets/shivamb/netflix-shows) dataset from Kaggle.
 
+## Retrieval failure analysis (Phase 1)
+
+The repository also contains a BM25 retrieval research track, separate from the
+genre classifier. Its question is whether most retrieval failures originate in
+data quality, tokenisation, field coverage, or vocabulary mismatch rather than
+BM25 scoring itself. This is a hypothesis to test, not an established result.
+
+Phase 1 adds an audited loader for all 8,807 movie and TV records and a
+configurable in-memory BM25 index. The classifier and exploratory notebook are
+unchanged. The legacy `search.py` remains available, with its failing list
+debug-print removed.
+
+```powershell
+python -m pip install -r requirements.txt
+python retrieval.py --audit-only
+python retrieval.py --query "space adventure"
+python retrieval.py --fields title description listed_in --weight title=3 --tokenizer words --stem --query "space adventure"
+python -m pytest -q
+```
+
+See [DATA.md](DATA.md) for all cleaning decisions, actual missing-field counts,
+tokenisation/stemming choices, and field-weight semantics. Weights repeat tokens
+and therefore affect both term frequency and document length; this is not BM25F.
+Run `python retrieval.py --help` for all options.
+
+Judgment tooling, a frozen query split, metrics, failure analysis, and the research
+write-up belong to later phases and have not been implemented. There are no
+retrieval results or human relevance labels yet, and no tuning has been performed.
+
 ## Future ideas
 
 - A game mode where you compete against the model to guess the genre of real Netflix movies
