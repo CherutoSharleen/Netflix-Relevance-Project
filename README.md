@@ -4,10 +4,11 @@
 
 An interactive Streamlit app that predicts a movie's genre from its description, trained on the Netflix Movies and TV Shows dataset. It shows the prediction, how confident the model is, and which words influenced the answer.
 
-👉 **[Try the live app](https://YOUR-APP-LINK.streamlit.app)**
+👉 **[Try the live app]([https://YOUR-APP-LINK.streamlit.app](https://cheruto-netflix-relevance.streamlit.app/genre))**
 
 <!-- Add a screenshot: take one of the running app, save it as screenshot.png in this repo, and it will show here -->
-![App screenshot](screenshot.png)
+<img width="1582" height="771" alt="image" src="https://github.com/user-attachments/assets/de70980c-6728-430b-b2ab-18aa4874d79d" />
+
 
 ---
 
