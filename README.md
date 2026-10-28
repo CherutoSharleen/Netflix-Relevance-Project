@@ -8,7 +8,7 @@ track and the existing **Guess the Genre** classifier.
 failure assignments have not been supplied. All effectiveness results below
 remain explicit placeholders. No empirical conclusion has been established.
 
-👉 **[Try the live app]([https://YOUR-APP-LINK.streamlit.app](https://cheruto-netflix-relevance.streamlit.app/genre))**
+**[Try the live app](https://cheruto-netflix-relevance.streamlit.app/genre)**
 
 <!-- Add a screenshot: take one of the running app, save it as screenshot.png in this repo, and it will show here -->
 <img width="1582" height="771" alt="image" src="https://github.com/user-attachments/assets/de70980c-6728-430b-b2ab-18aa4874d79d" />
