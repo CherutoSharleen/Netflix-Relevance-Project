@@ -172,6 +172,8 @@ grades, including hand-computed agreement examples.
 logs. Keep your own backups and explicitly version the finalized research
 artifacts when ready; ignoring is not backup or access control.
 
-Phase 3 retrieval metrics, Phase 4 failure assignments, and Phase 5 final
-write-up are not implemented. Missing research queries and labels must be
-supplied by you; the tool never fills those gaps.
+Phase 3 [retrieval metric definitions](METRICS.md) are implemented independently
+of these files. Real evaluation still requires your queries and complete human
+judgments. Phase 4 failure assignments and Phase 5 final write-up are not
+implemented. Missing research queries and labels must be supplied by you; the
+tool never fills those gaps.

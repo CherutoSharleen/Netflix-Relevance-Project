@@ -80,6 +80,7 @@ python -m pip install -r requirements.txt
 python retrieval.py --audit-only
 python retrieval.py --query "space adventure"
 python retrieval.py --fields title description listed_in --weight title=3 --tokenizer words --stem --query "space adventure"
+python -m pip install -r requirements-test.txt
 python -m pytest -q
 ```
 
@@ -100,10 +101,26 @@ labels are generated. See [LABELING.md](LABELING.md) for the full protocol,
 commands, input fingerprints, resume behavior, and pool-coverage limitations.
 Tuning must use only the development queries.
 
-Retrieval metrics, failure analysis, and the final research write-up belong to
-later phases. There are no retrieval results or human relevance labels yet, and
-no tuning has been performed. Self-consistency: [RESULT: exact self-agreement];
+There are no retrieval results or human relevance labels yet, and no tuning has
+been performed. Self-consistency: [RESULT: exact self-agreement];
 [RESULT: quadratic-weighted Cohen's kappa].
+
+### Metric definitions (Phase 3)
+
+`metrics.py` implements precision@k, recall@k, MRR, and nDCG@k from their
+definitions, without an IR metrics library. Hand-calculated examples are in
+`tests/test_metrics.py`; an independent `ir-measures` cross-check lives in
+`tests/test_metrics_library.py` and uses `requirements-test.txt`.
+
+Missing labels are errors, never implicit zero grades. Binary metrics require
+an explicit relevance threshold. nDCG uses linear graded gain and base-2 log
+discounts. See [METRICS.md](METRICS.md) for all conventions, undefined cases,
+and judgment-pool limitations.
+
+No research effectiveness results have been computed:
+[RESULT: precision@10 dev], [RESULT: recall@10 dev], [RESULT: MRR dev],
+[RESULT: nDCG@10 dev]. Failure analysis and the final research write-up remain
+for later phases.
 
 ## Future ideas
 

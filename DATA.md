@@ -111,6 +111,7 @@ python -m pip install -r requirements.txt
 python retrieval.py --audit-only
 python retrieval.py --query "space adventure" -k 10
 python retrieval.py --fields title description listed_in --tokenizer words --stem --weight title=3 --query "space adventure"
+python -m pip install -r requirements-test.txt
 python -m pytest -q
 ```
 
