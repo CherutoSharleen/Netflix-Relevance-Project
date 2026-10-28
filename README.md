@@ -88,9 +88,22 @@ tokenisation/stemming choices, and field-weight semantics. Weights repeat tokens
 and therefore affect both term frequency and document length; this is not BM25F.
 Run `python retrieval.py --help` for all options.
 
-Judgment tooling, a frozen query split, metrics, failure analysis, and the research
-write-up belong to later phases and have not been implemented. There are no
-retrieval results or human relevance labels yet, and no tuning has been performed.
+### Human judgment tooling (Phase 2)
+
+`python label_cli.py --help` exposes a human-only CLI for freezing development
+and held-out query sets, preparing ungraded candidates, recording timestamped
+grades 0-3, and re-labelling a saved blind sample. Completed paired passes can
+report exact agreement and quadratic-weighted Cohen's kappa.
+
+Start by writing your own `query_id,query` CSV; no research queries or relevance
+labels are generated. See [LABELING.md](LABELING.md) for the full protocol,
+commands, input fingerprints, resume behavior, and pool-coverage limitations.
+Tuning must use only the development queries.
+
+Retrieval metrics, failure analysis, and the final research write-up belong to
+later phases. There are no retrieval results or human relevance labels yet, and
+no tuning has been performed. Self-consistency: [RESULT: exact self-agreement];
+[RESULT: quadratic-weighted Cohen's kappa].
 
 ## Future ideas
 

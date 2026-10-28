@@ -123,6 +123,7 @@ baseline and does not use this new cleaning/configuration pipeline.
 The thesis that failures arise primarily upstream of scoring is **untested**.
 No judgments, metrics, tuning, failure assignments, or empirical effectiveness
 claims are produced in Phase 1. The judgment list is not yet available; evaluation
-must stop if required human labels are missing. Before any tuning, Phase 2 must
-freeze a development/held-out query split. Configuration examples above illustrate
-mechanics only and are not recommended or tuned settings.
+must stop if required human labels are missing. Phase 2's [human judgment
+tooling](LABELING.md) freezes a development/held-out query split before any tuning.
+Configuration examples above illustrate mechanics only and are not recommended
+or tuned settings.
